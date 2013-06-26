@@ -1,6 +1,6 @@
 import java.util.Arrays;
 
-public class CnfTablesc implements Grammar<Pair, CatTag>{
+public class CnfTablesc implements Grammar<CatTag>{
 CatTag[] first, second;
 
 

@@ -1,7 +1,7 @@
 
-public interface Grammar<PA,CT>{
+public interface Grammar<CT>{
 	
 	String getDesc (CT c);
-	PA getCombine (boolean p, CT r1,CT r2);
-	PA tokenToCats (boolean p, Symbol s);
+	Pair getCombine (boolean p, CT r1,CT r2);
+	Pair tokenToCats (boolean p, Symbol s);
 }
