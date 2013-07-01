@@ -1,4 +1,5 @@
-public enum CatTag{ CAT_Program,
+public enum CatTag{ 
+					CAT_Program,
                     CAT_External_declaration_List,
                     CAT_External_declaration,
                     CAT_Function_def,
@@ -285,4 +286,5 @@ public enum CatTag{ CAT_Program,
                     TOK_124124,
                     TOK_CLOS_,
                     TOK_126;
+
 }

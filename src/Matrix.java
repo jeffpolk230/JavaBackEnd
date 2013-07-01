@@ -1,30 +1,28 @@
+import java.util.Arrays;
 
-public abstract class Matrix{
-	
-	private int value;
+
+public abstract class Matrix <V extends Value>{
 	
 	/*Subclasses we want*/
-	public static class Zero extends Matrix {}
-	public static class One extends Matrix 
+	public static class Zero<V> extends Matrix {}
+	public static class One<V extends Value> extends Matrix<V>
 	{
-		public int value;
-		public One (int value)
+		public V value;
+		public One (V value)
 		{
-			super.value = value;
-			this.value = super.value;
+			this.value = value;
 		}
 		/*Two actual manipulating functions for One (the actual data)*/
-		public Matrix plus(Matrix A) 
+		public Matrix plus(One A) 
 		{
-			// Temp plus function, should be changed according to 'Value'
-			return new One(A.value + this.value); 
+			return new One(this.value.addition(A.value)); 
 		}
-		public Matrix times(Matrix A) 
+		public Matrix times(One A) 
 		{
-			return new One(A.value * this.value);
+			return new One(this.value.multiplication(true, A.value));
 		}
 	}
-	public static class Row extends Matrix 
+	public static class Row<V> extends Matrix
 	{
 		public Matrix left, right;
 		public Row (Matrix left, Matrix right)
@@ -33,7 +31,7 @@ public abstract class Matrix{
 			this.right = right;
 		}
 	}
-	public static class Col extends Matrix 
+	public static class Col<V> extends Matrix
 	{
 		public Matrix upper, lower;
 		public Col (Matrix upper, Matrix lower)
@@ -42,7 +40,7 @@ public abstract class Matrix{
 			this.lower = lower;
 		}
 	}
-	public static class Quad extends Matrix 
+	public static class Quad<V> extends Matrix
 	{
 		public Matrix ul, ur, ll, lr; //upper left; upper right; lower left; lower right
 		public Quad(Matrix ul, Matrix ur, Matrix ll, Matrix lr)
@@ -73,7 +71,7 @@ public abstract class Matrix{
 			System.out.println("hey");
 			return zero;
 		}
-		else return new One(A.value);
+		else return new One(((One) A).value);
 	}
 	public static Matrix quad (Matrix A,Matrix B, Matrix C, Matrix D){
 		if (A == zero && B == zero && C == zero && D == zero )
@@ -87,7 +85,7 @@ public abstract class Matrix{
 		if(A instanceof Zero) return B;
 		if(B instanceof Zero) return A;
 		if(A instanceof One && B instanceof One)
-			return one(((One) A).plus(B));
+			return one(((One) A).plus(((One)B)));
 		if(A instanceof Row && B instanceof Row)
 			return row( add(((Row) A).left,((Row) B).left) ,add(((Row) A).right, ((Row) B).right) );
 		if(A instanceof Col && B instanceof Col)
@@ -103,7 +101,7 @@ public abstract class Matrix{
 			return zero;
 		
 		if (A instanceof One && B instanceof One) 
-			return one(((One) A).times(B));
+			return one(((One) A).times(((One) B)));
 		
 		if (A instanceof One && B instanceof Row)
 			return row(mul(A,(((Row) B).left)),mul(A,(((Row) B).right)));
@@ -131,9 +129,68 @@ public abstract class Matrix{
 		else throw new Exception("Mismatching while multipling; you shouldn't reach here");		
 	}
 	
+	
+	public Pair closeDisjointP(boolean p, Matrix a, Matrix b, Matrix c)
+	{
+		try{
+			Pair result = close(a, b, c);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return new Pair(a,b);
+	}
+	public Pair close(Matrix a,Matrix b,Matrix c) throws Exception
+	{
+		if (b instanceof Zero)
+			return new Pair(new Zero(), new Zero());
+		else if (a instanceof Zero && c instanceof Zero)
+			return trav(b);
+		else throw new Exception("closeDisjoint mismatching, shouldn't happen");
+	}
+	
+	public static Pair trav(Matrix<Pair> x) throws Exception
+	{
+		if (x instanceof Zero)
+			return new Pair(new Zero(), new Zero());
+		if (x instanceof One)
+			return new Pair(new One( (Value) ((Pair) ((One) x).value ).first), new One( (Value) ((Pair) ((One) x).value ).second));
+		if (x instanceof Row)
+		{
+			Matrix one = row( (Matrix) trav (((Row) x).left).first,(Matrix) trav (((Row) x).right).first);
+			Matrix two = row( (Matrix) trav (((Row) x).left).second,(Matrix) trav (((Row) x).right).second);
+			return new Pair (one, two);
+		}
+		if (x instanceof Col)
+		{
+			Matrix one = col( (Matrix) trav (((Col) x).upper).first,(Matrix) trav (((Col) x).lower).first);
+			Matrix two = col( (Matrix) trav (((Col) x).upper).second,(Matrix) trav (((Col) x).lower).second);
+			return new Pair (one, two);
+		}
+		if (x instanceof Quad)
+		{ // left !! undone 
+			Matrix one = row( (Matrix) trav (((Row) x).left).first,(Matrix) trav (((Row) x).right).first);
+			Matrix two = row( (Matrix) trav (((Row) x).left).second,(Matrix) trav (((Row) x).right).second);
+			return new Pair (one, two);
+		}
+		else throw new Exception("closeDisjoint mismatching, shouldn't happen");
+	}
+	
 	/*Test Client*/
 	public static void main(String args[])
 	{
-
+		CatTag[] ct = new CatTag[]{CatTag.CAT_0};
+		Pair p = new Pair(ct,ct);
+		CatTagList ctl = new CatTagList(ct);
+		One o = new One(p);
+		Row r = new Row(o,o);
+		try {
+			Pair result = trav(r);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 }

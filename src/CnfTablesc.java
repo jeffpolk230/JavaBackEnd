@@ -1,7 +1,8 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class CnfTablesc implements Grammar<CatTag>{
-CatTag[] first, second;
+CatTagList first, second;
 
 
 public String getDesc (CatTag c){
@@ -3604,22 +3605,25 @@ AssignOr. Assignment_op ::= |=
   AllSpec (ParamDec (OnlyType ((:[]) (SpecProp (NoOptim))))) : TOK_volatile --> Parameter_type
   AssignOr : TOK_12461 --> Assignment_op
   Complement : TOK_126 --> Unary_operator*/
-	public static CatTag[] addition(CatTag[] a, CatTag[] b)
+	public CatTag[] addition(CatTag[] a, CatTag[] b)
 	{
 		  CatTag[] result = Arrays.copyOf(a, a.length+b.length);
 		  System.arraycopy(b, 0, result, a.length, b.length);
 		  return result; 
 	}
-	/*public  ArrayList<Pair> multiplication(CatTag[] a, CatTag[] b)
+	public  Pair multiplication(boolean p, CatTag[] a, CatTag[] b)
 	{
-		  //Pair x;
-		  ArrayList<Pair> result = new ArrayList<Pair>();
+		  ArrayList<CatTag> first = new ArrayList<CatTag>();
+		  ArrayList<CatTag> second = new ArrayList<CatTag>();
 		  for(CatTag ai: a)
 			  for(CatTag bi: b){
-				  result.add(getCombine(true, ai, bi));
+				 first.addAll(Arrays.asList(getCombine(p, ai, bi).first));
+				 second.addAll(Arrays.asList(getCombine(p, ai, bi).second));
 			  }
+		  Pair result = new Pair(first.toArray(new CatTag[first.size()]),second.toArray(new CatTag[second.size()]));
 		  return result;
-	}*/
+	}
+	/* ineffecient version of mul
 	public Pair multiply(boolean p, CatTag[] a, CatTag[] b)
 	{
 		Pair result =  new Pair(new CatTag[]{}, new CatTag[]{});
@@ -3630,7 +3634,7 @@ AssignOr. Assignment_op ::= |=
 			  }
 		return result;
 		
-	}
+	} */
 		public static void main(String args[])
 		{
 			CnfTablesc x = new CnfTablesc();
@@ -3643,7 +3647,7 @@ AssignOr. Assignment_op ::= |=
 			CatTag[] b = {CatTag.CAT_Compound_stm,CatTag.TOK_CLOS_};
 			//for(CatTag c: addition(a,b))	
 				//System.out.println(c);
-			Pair result = x.multiply(true ,a ,b);
-			System.out.println(result.getPair());
+			Pair result2 = x.multiplication(true, a, b);
+			System.out.println(result2.getPair());
 		} 
 }
