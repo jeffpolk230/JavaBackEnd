@@ -95,7 +95,7 @@ public abstract class Matrix <V extends Value>{
 		
 		else throw new Exception("Mismatching while adding; you shouldn't be here!");
 	}
-	public static Matrix mul(Matrix A, Matrix B) throws Exception
+	public static Matrix mul(boolean p, Matrix A, Matrix B) throws Exception
 	{
 		if (A instanceof Zero || B instanceof Zero) 
 			return zero;
@@ -104,27 +104,27 @@ public abstract class Matrix <V extends Value>{
 			return one(((One) A).times(((One) B)));
 		
 		if (A instanceof One && B instanceof Row)
-			return row(mul(A,(((Row) B).left)),mul(A,(((Row) B).right)));
+			return row(mul(p, A,(((Row) B).left)),mul(p, A,(((Row) B).right)));
 		
 		if (A instanceof Col && B instanceof One)
-			return col(mul(((Col) A).upper,B), mul(((Col) A).lower,B));
+			return col(mul(p, ((Col) A).upper,B), mul(p, ((Col) A).lower,B));
 		
 		if (A instanceof Row && B instanceof Col)
-			return add(( mul((((Row) A).left),(((Col) B).upper ))),(( mul((((Row) A).right),(((Col) B).lower )))));
+			return add(( mul(p, (((Row) A).left),(((Col) B).upper ))),(( mul(p, (((Row) A).right),(((Col) B).lower )))));
 		
 		if (A instanceof Col && B instanceof Row)
-			return quad(mul(((Col) A).upper,((Row) B).left),mul(((Col) A).upper,((Row) B).right),mul(((Col) A).lower,((Row) B).left),mul(((Col) A).lower,((Row) B).right));
+			return quad(mul(p, ((Col) A).upper,((Row) B).left),mul(p, ((Col) A).upper,((Row) B).right),mul(p, ((Col) A).lower,((Row) B).left),mul(p, ((Col) A).lower,((Row) B).right));
 		
 		if (A instanceof Row && B instanceof Quad)
-			return row( add( mul(((Row) A).left,((Quad) B).ul),mul(((Row) A).right,((Quad) B).ll) ), add( mul( ((Row) A).left,((Quad) B).ur ) ,mul(((Row) A).right,((Quad) B).lr)) );
+			return row( add( mul(p, ((Row) A).left,((Quad) B).ul),mul(p, ((Row) A).right,((Quad) B).ll) ), add( mul(p,  ((Row) A).left,((Quad) B).ur ) ,mul(p, ((Row) A).right,((Quad) B).lr)) );
 			//row (a & a' + b & c') (a & b' + b & d')
 		
 		if (A instanceof Quad && B instanceof Col)
-			return col( add( mul( ((Quad) A).ul, ((Col) B).upper) , mul(((Quad) A).ur,((Col) B).lower )), add( mul(((Quad) A).ll,((Col) B).upper), mul(((Quad) A).lr,((Col) B).lower )) );
+			return col( add( mul(p,  ((Quad) A).ul, ((Col) B).upper) , mul(p, ((Quad) A).ur,((Col) B).lower )), add( mul(p, ((Quad) A).ll,((Col) B).upper), mul(p, ((Quad) A).lr,((Col) B).lower )) );
 			//Quad a b c d & Col a' c' = col (a & a' + b & c') (c & a' + d & c')
 		
 		if(A instanceof Quad && B instanceof Quad)
-			return quad( mul(((Quad) A).ul, ((Quad) B).ul),mul(((Quad) A).ur, ((Quad) B).ur) ,mul(((Quad) A).ll, ((Quad) B).ll) ,mul(((Quad) A).lr, ((Quad) B).lr)  );
+			return quad( mul(p, ((Quad) A).ul, ((Quad) B).ul),mul(p, ((Quad) A).ur, ((Quad) B).ur) ,mul(p, ((Quad) A).ll, ((Quad) B).ll) ,mul(p, ((Quad) A).lr, ((Quad) B).lr)  );
 		
 		else throw new Exception("Mismatching while multipling; you shouldn't reach here");		
 	}
@@ -133,7 +133,7 @@ public abstract class Matrix <V extends Value>{
 	public Pair closeDisjointP(boolean p, Matrix a, Matrix b, Matrix c)
 	{
 		try{
-			Pair result = close(a, b, c);
+			Pair result = close(p, a, b, c);
 		}
 		catch (Exception e)
 		{
@@ -141,13 +141,44 @@ public abstract class Matrix <V extends Value>{
 		}
 		return new Pair(a,b);
 	}
-	public Pair close(Matrix a,Matrix b,Matrix c) throws Exception
+	public Pair close(boolean p , Matrix a,Matrix b,Matrix c) throws Exception
 	{
 		if (b instanceof Zero)
 			return new Pair(new Zero(), new Zero());
 		else if (a instanceof Zero && c instanceof Zero)
 			return trav(b);
-		else throw new Exception("closeDisjoint mismatching, shouldn't happen");
+		else if (a instanceof Quad && b instanceof Quad && c instanceof Quad)
+		{
+			Pair x21 = close (p, ((Quad) a).lr, ((Quad) b).ll, ((Quad) c).ul);
+			Pair x11 = close (p, ((Quad) a).ul, add(mul( p,((Quad) a).ur , (Matrix) x21.second), ((Quad) b).ul) , ((Quad) c).ul);
+			Pair x22 = close (p, ((Quad) a).lr, add(mul( p, (Matrix) x21.first, ((Quad) c).ur ), ((Quad) b).ll) , ((Quad) c).ll);
+			Pair x12 = close (p, ((Quad) a).ul, add(mul( p,((Quad) a).ur , (Matrix) x22.second) ,add(mul( p, (Matrix) x11.first, ((Quad) c).ur ), ((Quad) b).ur)) , ((Quad) c).ll);
+			
+		}
+		else if (a instanceof Zero && b instanceof Quad && c instanceof Quad)
+			return close(p, new Quad(new Zero(),new Zero(),new Zero(),new Zero()), b, new Quad( ((Quad) c).ul, ((Quad) c).ur, new Zero(), ((Quad) c).lr  ) );
+		else if (a instanceof Quad && ((Quad) a).ll instanceof Zero && b instanceof Quad && c instanceof Zero)
+			return close(p, new Quad( ((Quad) a).ul, ((Quad) a).ur, new Zero(), ((Quad) a).lr  ), b, new Quad(new Zero(), new Zero(),new Zero(),new Zero()) );
+		else if (a instanceof Quad && ((Quad) a).ll instanceof Zero && b instanceof Col && c instanceof Zero)
+		{
+			Matrix one, two;
+			Pair x2 = close (p, ((Quad) a).lr, ((Col) b).lower, new Zero() );
+			Pair x1 = close (p, ((Quad) a).ul, add(mul( p,((Quad) a).ur , (Matrix) x2.second), ((Col) b).upper), new Zero());
+			one = col((Matrix) x1.first,(Matrix) x2.first);
+			two = col((Matrix) x1.second,(Matrix) x2.second);
+			return new Pair(one, two);
+		}
+		else if (a instanceof Zero && b instanceof Row && c instanceof Quad && ((Quad) c).ll instanceof Zero)
+		{
+			Matrix one, two;
+			Pair x1 = close (p, new Zero(), ((Row) b).left, ((Quad) c).ul);
+			Pair x2 = close (p, new Zero(), add(mul( p, (Matrix) x1.first, ((Quad) c).ur ), ((Row) b).right), ((Quad) c).lr);
+			one = col((Matrix) x1.first,(Matrix) x2.first);
+			two = col((Matrix) x1.second,(Matrix) x2.second);
+			return new Pair(one, two);
+		}
+		else throw new Exception("closeDisjoint mismatching");
+		return null;
 	}
 	
 	public static Pair trav(Matrix<Pair> x) throws Exception
@@ -169,9 +200,9 @@ public abstract class Matrix <V extends Value>{
 			return new Pair (one, two);
 		}
 		if (x instanceof Quad)
-		{ // left !! undone 
-			Matrix one = row( (Matrix) trav (((Row) x).left).first,(Matrix) trav (((Row) x).right).first);
-			Matrix two = row( (Matrix) trav (((Row) x).left).second,(Matrix) trav (((Row) x).right).second);
+		{  
+			Matrix one = quad( (Matrix) trav (((Quad) x).ul).first,(Matrix) trav (((Quad) x).ur).first,(Matrix) trav (((Quad) x).lr).first,(Matrix) trav (((Quad) x).ll).first  );
+			Matrix two = quad( (Matrix) trav (((Quad) x).ul).second,(Matrix) trav (((Quad) x).ur).second,(Matrix) trav (((Quad) x).lr).second,(Matrix) trav (((Quad) x).ll).second  );
 			return new Pair (one, two);
 		}
 		else throw new Exception("closeDisjoint mismatching, shouldn't happen");
