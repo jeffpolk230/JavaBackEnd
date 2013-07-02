@@ -181,7 +181,7 @@ public abstract class Matrix <V extends Value>{
 		return null;
 	}
 	
-	public static Pair trav(Matrix<Pair> x) throws Exception
+	public static <V extends Pair> Pair trav(Matrix x) throws Exception
 	{
 		if (x instanceof Zero)
 			return new Pair(new Zero(), new Zero());
@@ -212,16 +212,25 @@ public abstract class Matrix <V extends Value>{
 	public static void main(String args[])
 	{
 		CatTag[] ct = new CatTag[]{CatTag.CAT_0};
-		Pair p = new Pair(ct,ct);
+		CatTag[] ct2 = new CatTag[]{CatTag.CAT_1};
 		CatTagList ctl = new CatTagList(ct);
+		CatTagList ctl2 = new CatTagList(ct2);
+		Pair p = new Pair(ctl,ctl);
 		One o = new One(p);
+		One o2 = new One (ctl);
+		One o3 = new One (ctl2);
+		System.out.println(o.value.show());
 		Row r = new Row(o,o);
 		try {
-			Pair result = trav(r);
+			Pair result  = trav(o);
+			System.out.println(((One) result.first).value.show());
+			
+			Matrix x = add (o, o2);
+			System.out.println(((One) x).value.show());
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
 }
